@@ -1,0 +1,28 @@
+{
+  "name": "pigalle.microservices",
+  "version": "0.1.0-alpha",
+  "description": "Lightweight microservices framework.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pigalle-io/pigalle.microservices.git"
+  },
+  "keywords": [
+    "pigalle",
+    "pigalle.io",
+    "microservices"
+  ],
+  "author": "Deepnox <contact@deepnox.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pigalle-io/pigalle.microservices/issues"
+  },
+  "homepage": "https://github.com/pigalle-io/pigalle.microservices#readme",
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "uuid": "^3.1.0"
+  }
+}
