@@ -7,12 +7,10 @@ class FakeService extends Microservice {
     super('fake-service');
   }
 
-  sum(x, y) {
-    return new Promise((resolve) => {
-      resolve(x+y);
-    })
+  sum(args) {
+    return args.x + args.y;
   }
 }
 
 const f = new FakeService();
-f.expose().start();
+f.expose().registerAll().start();

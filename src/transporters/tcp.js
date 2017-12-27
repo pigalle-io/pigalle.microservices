@@ -1,7 +1,7 @@
-
 const net = require('net');
 
 const _ = require('lodash');
+const isPromise = require('is-promise');
 
 const {TransporterBase} = require('./base');
 
@@ -27,8 +27,8 @@ class TcpTransporter extends TransporterBase {
     this._registry = new Map();
   }
 
-  register(service) {
-    this._registry.set(service.name, service);
+  register(name, service) {
+    this._registry.set(name, service);
     return this;
   }
 
@@ -37,9 +37,10 @@ class TcpTransporter extends TransporterBase {
     const request = buffer.toString();
 
     return new Promise((resolve, reject) => {
-      console.log(buffer);
       try {
+
         const data = this.serializer.unserialize(request);
+        console.log(data)
         if (!data.service) {
           reject(new Error('Service attribute is missing into the request'));
         } else {
@@ -49,29 +50,34 @@ class TcpTransporter extends TransporterBase {
           resolve({service: service, payload: payload});
         }
       } catch (e) {
-        reject(new Error('Unable to unserialize buffer'));
+        reject(new Error('Unable to unserialize buffer ' + e));
       }
     });
   }
 
-  dispatch() {
-    return (request) => {
-      return new Promise((resolve, reject) => {
-        const service = this._registry.get(request.service);
-        if (!service) {
-          reject(new Error(`Service ${service} not found in registry`));
-        } else {
-          if (!request.method) {
-            reject(new Error(`Missing method: ${request.method}`));
-          }
-          if (!service.hasOwnProperty(request.method)) {
-            reject(new Error(`Service provides not method ${request.method}`));
-          }
-          const fn = service[request.method];
-          return fn.call(null, request.payload);
+  dispatch(request) {
+    return new Promise((resolve, reject) => {
+      const service = this._registry.get(request.service.name);
+      console.log(request);
+      if (!service) {
+        reject(new Error(`Service ${service} not found in registry`));
+      } else {
+        /*
+        if (!request.method) {
+          reject(new Error(`Missing method: ${request.method}`));
         }
-      });
-    }
+        if (!service.hasOwnProperty(request.method)) {
+          reject(new Error(`Service provides not method ${request.method}`));
+        }
+        */
+        const response = service(request.payload);
+        if (isPromise(response) === false) {
+          resolve(response);
+        } else {
+          return response.then(resolve).catch(reject);
+        }
+      }
+    });
   }
 
 
@@ -86,14 +92,18 @@ class TcpTransporter extends TransporterBase {
           buffer = buffer.slice(0, buffer.indexOf(CHAR_EOT));
 
 
-
           this.processRequest(buffer)
-            .then(this.dispatch.bind(this))
+            .then((request) => {
+              return this.dispatch(request);
+            })
             .then((response) => {
-            socket.write(response.toString());
+              socket.write(response.toString());
+              socket.destroy();
+            }).catch((err) => {
+            //throw new Error(err);
+            socket.write(err.toString());
+            socket.write(err.stack);
             socket.destroy();
-          }).catch((err) => {
-            throw new Error(err);
           });
         }
       });

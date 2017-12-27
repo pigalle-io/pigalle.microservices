@@ -8,7 +8,7 @@ class JsonSerializer extends SerializerBase {
 
   serialize(o) {
     try {
-      JSON.stringify(o)
+      return JSON.stringify(o);
     } catch (e) {
       throw new Error(e);
     }
@@ -16,7 +16,7 @@ class JsonSerializer extends SerializerBase {
 
   unserialize(o) {
     try {
-      JSON.parse(o)
+      return JSON.parse(o);
     } catch (e) {
       throw new Error(e);
     }
