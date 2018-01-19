@@ -1,5 +1,7 @@
 const net = require('net');
 
+const Promise = require('bluebird');
+
 const _ = require('lodash');
 const isPromise = require('is-promise');
 
@@ -18,20 +20,12 @@ const CHAR_EOT = '\u0004';
 class TcpTransporter extends TransporterBase {
 
   constructor(options = {}) {
-    super('tcp');
+    super('tcp', options);
     this._options = _.merge(defaultOptions, options);
-    console.log(this._options);
     this.address = this._options.address || '127.0.0.1';
     this.port = this._options.port || 1789;
     this.serializer = new (require(this._options.serializer.module))();
-    this._registry = new Map();
   }
-
-  register(name, service) {
-    this._registry.set(name, service);
-    return this;
-  }
-
 
   processRequest(buffer) {
     const request = buffer.toString();
@@ -57,19 +51,10 @@ class TcpTransporter extends TransporterBase {
 
   dispatch(request) {
     return new Promise((resolve, reject) => {
-      const service = this._registry.get(request.service.name);
-      console.log(request);
+      const service = this._registry.get(request.service);
       if (!service) {
         reject(new Error(`Service ${service} not found in registry`));
       } else {
-        /*
-        if (!request.method) {
-          reject(new Error(`Missing method: ${request.method}`));
-        }
-        if (!service.hasOwnProperty(request.method)) {
-          reject(new Error(`Service provides not method ${request.method}`));
-        }
-        */
         const response = service(request.payload);
         if (isPromise(response) === false) {
           resolve(response);
@@ -86,8 +71,6 @@ class TcpTransporter extends TransporterBase {
       let buffer = Buffer.from('');
       socket.on('data', (data) => {
         buffer = Buffer.concat([buffer, Buffer.from(data)]);
-        console.log(buffer)
-
         if (buffer.includes(CHAR_EOT) === true) {
           buffer = buffer.slice(0, buffer.indexOf(CHAR_EOT));
 
@@ -98,7 +81,7 @@ class TcpTransporter extends TransporterBase {
             })
             .then((response) => {
               socket.write(response.toString());
-              socket.destroy();
+              socket.end();
             }).catch((err) => {
             //throw new Error(err);
             socket.write(err.toString());

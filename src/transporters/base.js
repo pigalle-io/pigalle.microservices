@@ -1,14 +1,14 @@
+const LOG = require('../common/logger')('TransporterBase');
 const {PigalleMicroserviceBaseClass} = require('../common/');
 
 class TransporterBase extends PigalleMicroserviceBaseClass {
 
-  constructor(protocol) {
+  constructor(protocol, options) {
     super();
+    this._servicesRegistry = options.servicesRegistry || (() => {
+      throw new Error('Missing services registry');
+    })();
     this.protocol = protocol.toLowerCase();
-  }
-
-  register(service) {
-    throw new Error('register() is not implemented');
   }
 
   start() {

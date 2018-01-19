@@ -4,7 +4,7 @@ const {Microservice} = require('../src/microservice');
 
 class FakeService extends Microservice {
   constructor() {
-    super('fake-service');
+    super();
   }
 
   sum(args) {
@@ -12,5 +12,4 @@ class FakeService extends Microservice {
   }
 }
 
-const f = new FakeService();
-f.expose().registerAll().start();
+FakeService.factory().expose().registerAll().start();

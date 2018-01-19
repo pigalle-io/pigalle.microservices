@@ -1,19 +1,20 @@
-
+const process = require('process');
 const _ = require('lodash');
 const uuid = require('uuid');
 
+const LOG = require('./common/logger')('Microservice');
 const {PigalleMicroserviceBaseClass} = require('./common/base');
+const {ServicesRegistry} = require('./registries/services-registry');
+const {Host} = require('./common/host');
 
 
 const defaultsOpts = {
+  namespace: 'default',
   transporter: {
     module: './transporters/tcp',
-    options: {
-
-    }
+    options: {}
   },
 };
-
 
 const getAllMethods = (obj) => {
   let props = []
@@ -26,7 +27,9 @@ const getAllMethods = (obj) => {
         typeof obj[p] === 'function' &&  //only the methods
         p !== 'constructor' &&           //not the constructor
         (i == 0 || p !== arr[i - 1]) &&  //not overriding in this prototype
-        props.indexOf(p) === -1          //not overridden in a child
+        props.indexOf(p) === -1 &&          //not overridden in a child
+        (!_.startsWith(p, '_')) && // not a private method.
+        (p !== 'setUp')
       )
     props = props.concat(l)
   }
@@ -35,51 +38,57 @@ const getAllMethods = (obj) => {
     Object.getPrototypeOf(obj)              //not the the Object prototype methods (hasOwnProperty, etc...)
     )
 
-  return props
+  return props;
 }
+
 
 
 class Microservice extends PigalleMicroserviceBaseClass {
 
-  constructor(name, options) {
+  constructor(options) {
     super();
-    this.name = name || uuid.v4();
-    this._options = options || defaultsOpts;
+    this._name = this.constructor.name;
+    this._options = _.merge(defaultsOpts, options);
+    this._host = Host.get();
+    this._host.printInterfaces();
+  }
+
+  _getChildrenServices() {
+    return _.differenceWith(getAllMethods(this), getAllMethods(Microservice.prototype))
+  }
+
+  _createServicesRegistryForTransporter() {
+    this._options.transporter.options.servicesRegistry = new ServicesRegistry(this._options.namespace, this._name, this, this._getChildrenServices());
+    return this;
   }
 
   expose(extension) {
+    this._createServicesRegistryForTransporter();
     extension = extension || this._options.transporter.module;
     const Clazz = require(extension);
     this._transporter = new Clazz(this._options.transporter.options);
     return this;
   }
 
-  start() {
+  async start() {
     if (!this._transporter) {
       throw new Error('Invalid transporter');
     }
-    this._transporter.start();
+    let servicesRegistryInitRetval = await this._transporter._servicesRegistry.init();
+    return this._transporter.start();
   }
 
-  register(service, fn) {
-    this._transporter.register(service, fn);
-    return this;
-  }
-
-  registerAll() {
-
-    const fns = _.differenceWith(getAllMethods(this), getAllMethods(Microservice.prototype))
-    console.log(fns)
-
-    fns.forEach((method) => {
-      this.register(`${this.name}.${method}`, this[method]);
-    });
-
-    return this;
+  static factory(options) {
+    return new (this.prototype.constructor)(options);
   }
 
 }
 
-module.exports = {
-  Microservice: Microservice,
-}
+process.on('unhandledRejection', (err) => {
+  LOG.error('Uncaught error', err)
+  //process.exit(1)
+});
+
+
+module.exports = {};
+module.exports.Microservice = Microservice;
