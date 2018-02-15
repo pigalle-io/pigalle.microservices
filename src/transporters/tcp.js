@@ -5,10 +5,10 @@ const Promise = require('bluebird');
 const _ = require('lodash');
 const isPromise = require('is-promise');
 
-const {TransporterBase} = require('./base');
+const {TransporterBase} = require('@pigalle/transporters.base');
 
 const defaultOptions = {
-  address: '127.0.0.1',
+  address: '0.0.0.0',
   port: 1789,
   serializer: {
     module: '../serializers/json',

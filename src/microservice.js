@@ -45,16 +45,32 @@ const getAllMethods = (obj) => {
 
 class Microservice extends PigalleMicroserviceBaseClass {
 
-  constructor(options) {
+  constructor(...args) {
     super();
+    console.log('args.length=', args.length);
+    let options, environment;
+    if (args.length === 1) {
+      environment = args[0];
+      console.log('environment', environment)
+    }
+    if (args.length === 2) {
+      options = args[0];
+      environment = args[1];
+      console.log('environment', environment)
+    }
     this._name = this.constructor.name;
+    if (_.isString(environment)) {
+      this.env = JSON.parse(environment);
+    } else {
+      this.env = {};
+    }
     this._options = _.merge(defaultsOpts, options);
     this._host = Host.get();
     this._host.printInterfaces();
   }
 
   _getChildrenServices() {
-    return _.differenceWith(getAllMethods(this), getAllMethods(Microservice.prototype))
+    return _.differenceWith(getAllMethods(this), getAllMethods(Microservice.prototype));
   }
 
   _createServicesRegistryForTransporter() {
@@ -76,10 +92,6 @@ class Microservice extends PigalleMicroserviceBaseClass {
     }
     let servicesRegistryInitRetval = await this._transporter._servicesRegistry.init();
     return this._transporter.start();
-  }
-
-  static factory(options) {
-    return new (this.prototype.constructor)(options);
   }
 
 }

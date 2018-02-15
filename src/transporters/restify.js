@@ -9,10 +9,10 @@ const restify = require('restify');
 
 const LOG = require('../common/logger')('transporters.restify.RestifyTransporter');
 
-const {TransporterBase} = require('./base');
+const {TransporterBase} = require('@pigalle/transporters.base');
 
 const defaultOptions = {
-  address: '127.0.0.1',
+  address: '0.0.0.0',
   port: 1789,
   serializer: {
     module: '../serializers/json',
@@ -37,8 +37,8 @@ class RestifyTransporter extends TransporterBase {
   _wrapRegisteredServices() {
     for (let entry of this._servicesRegistry.services.entries()) {
       const name = entry[0], value = entry[1];
-      if (name === 'get') {
-        this.connection.get('/:id', (req, res, next) => {
+      //if (name === 'get') {
+        this.connection.get(name, (req, res, next) => {
           this._servicesRegistry.call(name, [req.params.id])
             .then((result) => {
               LOG.debug(result);
@@ -51,7 +51,7 @@ class RestifyTransporter extends TransporterBase {
               next(err);
             });
         });
-      }
+      //}
     }
   }
 

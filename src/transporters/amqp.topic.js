@@ -8,7 +8,7 @@ const _ = require('lodash');
 const isPromise = require('is-promise');
 
 const LOG = require('../common/logger')('AmqpConsumerTopic');
-const {TransporterBase} = require('./base');
+const {TransporterBase} = require('@pigalle/transporters.base');
 
 const defaultOptions = {
   uri: 'amqp://localhost:5672',
