@@ -57,9 +57,13 @@ typings/
 # dotenv environment variables file
 .env
 
-# JetBrains WebStorm/IntelliJ
+# Idea/Webstorm/PyCharm files
+*.iml
 .idea/
 
-# Gulp cache file
-.gulp-cache
+# Build directory
+.build/
+
+# Coveralls
+.coveralls.yml
 

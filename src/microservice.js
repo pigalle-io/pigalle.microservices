@@ -7,6 +7,8 @@ const {PigalleMicroserviceBaseClass} = require('./common/base');
 const {ServicesRegistry} = require('./registries/services-registry');
 const {Host} = require('./common/host');
 
+const {UndefinedError} = require('@pigalle/core.erros.undefined');
+
 
 const defaultsOpts = {
   namespace: 'default',
@@ -67,6 +69,7 @@ class Microservice extends PigalleMicroserviceBaseClass {
     this._options = _.merge(defaultsOpts, options);
     this._host = Host.get();
     this._host.printInterfaces();
+    this.router = null;
   }
 
   _getChildrenServices() {
@@ -88,7 +91,7 @@ class Microservice extends PigalleMicroserviceBaseClass {
 
   async start() {
     if (!this._transporter) {
-      throw new Error('Invalid transporter');
+      throw new UndefinedError('Transporter is missing');
     }
     let servicesRegistryInitRetval = await this._transporter._servicesRegistry.init();
     return this._transporter.start();
