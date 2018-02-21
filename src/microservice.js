@@ -1,13 +1,15 @@
-const process = require('process');
-const _ = require('lodash');
-const uuid = require('uuid');
+const process = require('process')
+const _ = require('lodash')
+const uuid = require('uuid')
 
-const LOG = require('./common/logger')('Microservice');
-const {PigalleMicroserviceBaseClass} = require('./common/base');
-const {ServicesRegistry} = require('./registries/services-registry');
-const {Host} = require('./common/host');
+const LOG = require('./common/logger')('Microservice')
+const {PigalleMicroserviceBaseClass} = require('./common/base')
+const {ServicesRegistry} = require('./registries/services-registry')
+const {Host} = require('./common/host')
 
-const {UndefinedError} = require('@pigalle/core.erros.undefined');
+const {UndefinedError} = require('@pigalle/core.errors.undefined')
+
+const {classOrInstanceInspector} = require('class-or-instance-inspector')
 
 
 const defaultsOpts = {
@@ -18,36 +20,10 @@ const defaultsOpts = {
   },
 };
 
-const getAllMethods = (obj) => {
-  let props = []
-
-  do {
-    const l = Object.getOwnPropertyNames(obj)
-      .concat(Object.getOwnPropertySymbols(obj).map(s => s.toString()))
-      .sort()
-      .filter((p, i, arr) =>
-        typeof obj[p] === 'function' &&  //only the methods
-        p !== 'constructor' &&           //not the constructor
-        (i == 0 || p !== arr[i - 1]) &&  //not overriding in this prototype
-        props.indexOf(p) === -1 &&          //not overridden in a child
-        (!_.startsWith(p, '_')) && // not a private method.
-        (p !== 'setUp')
-      )
-    props = props.concat(l)
-  }
-  while (
-    (obj = Object.getPrototypeOf(obj)) &&   //walk-up the prototype chain
-    Object.getPrototypeOf(obj)              //not the the Object prototype methods (hasOwnProperty, etc...)
-    )
-
-  return props;
-}
-
-
 
 class Microservice extends PigalleMicroserviceBaseClass {
 
-  constructor(...args) {
+  constructor (...args) {
     super();
     console.log('args.length=', args.length);
     let options, environment;
@@ -72,16 +48,16 @@ class Microservice extends PigalleMicroserviceBaseClass {
     this.router = null;
   }
 
-  _getChildrenServices() {
-    return _.differenceWith(getAllMethods(this), getAllMethods(Microservice.prototype));
+  _getChildrenServices () {
+    return _.differenceWith(classOrInstanceInspector(this), classOrInstanceInspector(Microservice));
   }
 
-  _createServicesRegistryForTransporter() {
+  _createServicesRegistryForTransporter () {
     this._options.transporter.options.servicesRegistry = new ServicesRegistry(this._options.namespace, this._name, this, this._getChildrenServices());
     return this;
   }
 
-  expose(extension) {
+  expose (extension) {
     this._createServicesRegistryForTransporter();
     extension = extension || this._options.transporter.module;
     const Clazz = require(extension);
@@ -89,7 +65,7 @@ class Microservice extends PigalleMicroserviceBaseClass {
     return this;
   }
 
-  async start() {
+  async start () {
     if (!this._transporter) {
       throw new UndefinedError('Transporter is missing');
     }
